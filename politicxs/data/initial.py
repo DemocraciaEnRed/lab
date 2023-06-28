@@ -1,3 +1,4 @@
+import hashlib
 import pandas as pd
 
 
@@ -5,7 +6,7 @@ import pandas as pd
 ## AREAS Y PUESTOS
 #########################################
 
-PUESTOS_AREAS = pd.read_csv("inputs/puestos_areas_2023.csv")
+PUESTOS_AREAS = pd.read_csv("data/puestos_areas_2023.csv")
 
 
 
@@ -13,9 +14,14 @@ PUESTOS_AREAS = pd.read_csv("inputs/puestos_areas_2023.csv")
 ## DATA INICIAL
 #########################################
 
-df_input = pd.read_csv("inputs/elecciones_2023.csv")
+df_input = pd.read_csv("data/elecciones_2023.csv")
 
+def make_hash(texto):
+    md5_hash = hashlib.md5()
+    md5_hash.update(texto.encode('utf-8'))
+    return md5_hash.hexdigest()
 
+df_input['person_id'] = df_input['full_name'].fillna('').apply(make_hash)
 
 #########################################
 ## POLITICXS

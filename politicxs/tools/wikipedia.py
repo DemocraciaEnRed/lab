@@ -1,6 +1,9 @@
+import wikipedia
 
 import requests
 from bs4 import BeautifulSoup
+
+wikipedia.set_lang("es")
 
 # Creo la clase para analizar cosas desde wikipedia
 class Wikipedia:
@@ -62,3 +65,21 @@ class Wikipedia:
                     self.hijos = row.find('td').get_text().strip()               
                 if 'Partido político' in row.get_text():
                     self.partido = row.find('td').get_text().strip()
+
+
+
+    @staticmethod
+    def search(full_name):
+        
+        print(f"Buscando en API de Wikipedia: {full_name}")
+
+        results = wikipedia.search(full_name)
+
+        if not results:
+            return ''
+        
+        page_id = results[0]['pageid']
+        try:
+            return wikipedia.page(pageid=page_id).url
+        except:
+            return ''
