@@ -78,14 +78,25 @@ from data.from_apis import WIKIDATA_PAGES
 df = pd.merge(POLITICXS, WIKIDATA_PAGES, on='person_id', how='inner')
 
 # Itero sobre las filas para para analizarlos por api
-for index, row in df.iterrows():
+for index, row in df.head(5).iterrows():
     if not pd.isna(row['URL_WIKIDATA']) :
         wikidata = Wikidata(row)
         api_response = wikidata.get_info()
         print(api_response)
+        # Primero tengo que descargar el json para poder visualizarlo bien
+        # Luego si no existe texto (nombre o titulo) de la referencia tengo que crear el buscador de referenced_info
+
+        # seguir con wikipedia
+        # seguir con duckduckgo
+        # seguir con google
 
 
-# df.to_csv('data/wikidata_vars_politicxs_2023.csv')
+
+
+
+#         for key, value in api_response:
+#             df.at[index, f'WIKIDATA_{key}'] = value        
+# df.to_csv('data/wikidata_data_politicxs_2023.csv')
 
 
 
@@ -96,6 +107,35 @@ for index, row in df.iterrows():
 # ## Poblamos la data final
 # #########################################
 
-# from outputs.populate import populate_final_data
 
-# populate_final_data()
+# import pandas as pd
+
+# from data.initial import (
+#     df_input, 
+#     PUESTOS_AREAS
+# )
+
+# from data.from_apis import (
+#     WIKIPEDIA_PAGES,
+#     WIKIDATA_PAGES
+# )
+
+
+# # Agrego id del area por puesto en las candidaturas
+# CANDIDATURAS = pd.merge(df_input, PUESTOS_AREAS, left_on=['state', 'role_type'], right_on=['state', 'role_type'], how='left')
+# CANDIDATURAS['area'] = CANDIDATURAS['role_type_area_id'].fillna(0).astype(int)
+# # Agrego membership_type
+# CANDIDATURAS['membership_type'] = "campaign_politician"
+# # Agrego páginas de wikipedia
+# CANDIDATURAS = pd.merge(CANDIDATURAS, WIKIPEDIA_PAGES, on='person_id', how='inner')
+# # Agrego páginas de wikidata
+# CANDIDATURAS = pd.merge(CANDIDATURAS, WIKIDATA_PAGES, on='person_id', how='inner')
+
+
+
+# # Elimino columnas innecesarias
+# CANDIDATURAS = CANDIDATURAS.drop([
+#     'role_type_area_id',
+# ], axis=1)
+
+# CANDIDATURAS.to_csv('outputs/elecciones_2023.csv')
