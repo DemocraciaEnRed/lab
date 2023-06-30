@@ -19,4 +19,4 @@ for index, row in df.iterrows():
             df.at[index, f'WIKIDATA_{key}'] = value        
         
 df = df.drop([col for col in POLITICXS.columns if col != "person_id"], axis=1)
-df.to_csv('data/wikidata_values_politicxs_2023.csv')
+df.to_csv('data/wikidata_values_politicxs_2023.csv', index=False)

@@ -13,4 +13,4 @@ for index, row in df.iterrows():
     df.at[index, 'WIKIDATA_URL'] = wikidata_page
 
 df = df.drop([col for col in POLITICXS.columns if col != "person_id"], axis=1)
-df.to_csv('data/wikidata_links_politicxs_2023.csv')
+df.to_csv('data/wikidata_links_politicxs_2023.csv', index=False)

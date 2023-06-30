@@ -17,4 +17,4 @@ for index, row in df.iterrows():
 
 
 df = df.drop([col for col in POLITICXS.columns if col != "person_id"], axis=1)
-df.to_csv('data/wikipedia_links_politicxs_2023.csv')
+df.to_csv('data/wikipedia_links_politicxs_2023.csv', index=False)
