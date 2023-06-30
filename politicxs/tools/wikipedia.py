@@ -1,71 +1,87 @@
 import wikipedia
 
 import requests
-from bs4 import BeautifulSoup
+import mwparserfromhell
+import json
 
 wikipedia.set_lang("es")
 
-# Creo la clase para analizar cosas desde wikipedia
 class Wikipedia:
+
     """
-        Con BeautifulSoup dado que es una web que carga la data completa
-        BeautifulSoup obtiene el código completo de html
+        Wikipedia via API
     """
 
-    ocupacion = ""
-    educacion = ""
-    educado_en = ""
-    nacimiento = ""
-    residencia = ""
-    religion = ""
-    hijos = ""
-    partido = ""
+    API_URL = 'https://es.wikipedia.org/w/api.php'
+    API_PARAMS = {
+        'format': 'json',
+        'action': 'query',
+        'prop': 'revisions',
+        'language': 'es',
+        'rvprop': 'content',
+        'rvsection': '0'
+    }    
+
+
+    PROPERTIES = {
+        'profesión': 'PROFESION',
+        'cargo': 'CARGO1',
+        'cargo2': 'CARGO2',
+        'cargo3': 'CARGO3',
+        'cargo4': 'CARGO4',
+        'cargo5': 'CARGO5',
+        'fecha de nacimiento': 'FECHA_NACIMIENTO',
+        'lugar de nacimiento': 'LUGAR_NACIMIENTO',
+        'partido': 'PARTIDO',
+        'afiliaciones': 'AFILIACIONES',
+        'almamáter': 'ALMAMATER',
+        'sitioweb': 'SITIO_WEB',
+    }
+
     
+    def __init__(self, row):
+        self.id = str(row['WIKIPEDIA_PAGE_ID'])
 
-    def __init__(self, url):
-        self.puestos = []
-        if url:
-            print(f"Scrappeanding {url}")
-            response = requests.get(url)
-            self.page = response.text
-            self.process_biography()
 
-    def process_biography(self):
-        soup = BeautifulSoup(self.page, 'html.parser')
-        # Infobox de biografia
-        infobox = soup.find(class_='infobox')
-        # Correspondiente a la biografía
-        bio_section = infobox.find('tbody')
-        # Buscar las filas de la tabla de la sección de la biografía
-        rows = bio_section.find_all('tr')        
+    def get_info(self):
+
+
+        print(f"Buscando en API de Wikipedia: {self.id}")
+        response = {}
+        params = self.API_PARAMS
+        params.update({
+            "pageids": self.id,
+        })        
+        data = requests.get(self.API_URL, params=params).json()
+        if not data: return response
+
+        # Obtener la información del infobox 
+        pages = data['query']['pages']
+        revision = pages[self.id]['revisions'][0]['*']
         
-        # Recorrer cada fila y extraer los puestos
-        for row in rows:
+        
+        # Parsear el contenido del infobox utilizando mwparserfromhell
+        wikicode = mwparserfromhell.parse(revision)
 
-            # Si el texto contiene una etiqueta de encabezado, es un puesto
-            if row.find('th', style="text-align:center;background-color:#E6E6FA;;") or row.find('th', style="text-align:center;background-color:#8DB1C3;color:#FFF;"):
-                texto = row.find('th').get_text().strip()
-                if texto:
-                    self.puestos.append(texto)
-            else: 
-                # Obtener el texto de la fila
-                if 'Educado en' in row.get_text():
-                    self.educado_en = row.find('td').get_text().strip()
-                if 'Educación' in row.get_text():
-                    self.educacion = row.find('td').get_text().strip()
-                if 'Ocupación' in row.get_text():
-                    self.ocupacion = row.find('td').get_text().strip()    
-                if 'Nacimiento' in row.get_text():
-                    self.nacimiento = row.find('td').get_text().strip()      
-                if 'Residencia' in row.get_text():
-                    self.residencia = row.find('td').get_text().strip()      
-                if 'Religión' in row.get_text():
-                    self.religion = row.find('td').get_text().strip()      
-                if 'Hijos' in row.get_text():
-                    self.hijos = row.find('td').get_text().strip()               
-                if 'Partido político' in row.get_text():
-                    self.partido = row.find('td').get_text().strip()
+        # Convertir el contenido del infobox a un objeto JSON
+        infobox_dict = {}
+        for template in wikicode.filter_templates():
+            template_dict = {}
+            for param in template.params:
+                param_name = param.name.strip()
+                param_value = param.value.strip_code().strip()
+                template_dict[param_name] = param_value
+            infobox_dict[template.name.strip()] = template_dict
 
+        ficha = [k for k in infobox_dict.keys() if 'ficha de' in k.lower()]
+        if ficha:
+
+            data = infobox_dict[ficha[0]]
+            for k, v in self.PROPERTIES.items():
+                if k in data:
+                    response.update({v: data[k].split('|')[0]})
+
+        return response
 
 
     @staticmethod
@@ -76,10 +92,13 @@ class Wikipedia:
         results = wikipedia.search(full_name)
 
         if not results:
-            return ''
+            return {}
         
         page_id = results[0]['pageid']
         try:
-            return wikipedia.page(pageid=page_id).url
+            return {
+                'page_id': page_id,
+                'url': wikipedia.page(pageid=page_id).url
+            }
         except:
-            return ''
+            return {}
